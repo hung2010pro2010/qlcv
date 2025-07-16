@@ -1,0 +1,48 @@
+/web3
+|-- /assets
+|   |-- /css
+|   |-- /js
+|   |-- /images
+|   |-- /plugins
+|   |-- /scss
+|-- /controllers
+|   |-- CategoryController.php
+|   |-- ProjectGroupController.php
+|   |-- UserController.php
+|   |-- TaskController.php
+|-- /models
+|   |-- Category.php
+|   |-- ProjectGroup.php
+|   |-- TaskResponsible.php
+|   |-- User.php
+|   |-- Task.php
+|-- /uploads
+|-- /views
+|   |-- /categories
+|       |-- add.php
+|       |-- edit.php
+|       |-- list.php
+|   |-- /layouts
+|       |-- content.php
+|       |-- header.php
+|       |-- sidebar.php
+|       |-- footer.php
+|       |-- layout.php
+|       |-- menu_header.php
+|   |-- /project_groups
+|       |-- add.php
+|       |-- edit.php
+|       |-- list.php
+|   |-- /tasks
+|       |-- add.php
+|       |-- edit.php
+|       |-- list.php
+|   |-- /users
+|       |-- add.php
+|       |-- edit.php
+|       |-- list.php
+|       |-- login.php
+
+|-- /config
+|   |-- db.php
+|-- index.php

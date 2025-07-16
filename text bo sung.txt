@@ -1,0 +1,310 @@
+Tạo thêm bảng
+
+CREATE TABLE notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    icon VARCHAR(100), -- ví dụ: 'person_add', 'add_shopping_cart'
+    message TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_read TINYINT(1) DEFAULT 0
+);
+
+
+CREATE TABLE notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT, -- người nhận
+    message TEXT NOT NULL,
+    icon VARCHAR(100), -- ví dụ: person_add, delete_forever
+    color VARCHAR(50), -- ví dụ: bg-red, bg-green
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_read TINYINT DEFAULT 0
+);
+
+
+ALTER TABLE tasks
+ADD COLUMN approval_time DATETIME DEFAULT NULL,
+ADD COLUMN status_time DATETIME DEFAULT NULL;
+
+
+
+ALTER TABLE notifications CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+ALTER TABLE notifications CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+ALTER TABLE notifications CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+ALTER TABLE notifications CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+
+
+-- Kiểm tra charset và collation của cơ sở dữ liệu
+SELECT SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME
+FROM information_schema.SCHEMATA
+WHERE SCHEMA_NAME = 'web3';
+
+-- Kiểm tra charset/collation của bảng `notifications`
+SHOW TABLE STATUS FROM web3 WHERE Name = 'notifications';
+
+-- Kiểm tra charset/collation của từng cột trong bảng `notifications`
+SHOW FULL COLUMNS FROM notifications;
+
+
+CREATE TABLE task_results (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    task_id INT NOT NULL,
+    description TEXT,
+    result_link TEXT,
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+);
+
+
+ALTER TABLE tasks 
+DROP COLUMN expected_result, 
+DROP COLUMN result_link;
+
+
+ALTER TABLE notifications ADD COLUMN is_read TINYINT(1) DEFAULT 0;
+
+
+
+===== Bổ sung ===
+CREATE TABLE `task_supervisors` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `task_id` INT(11) NOT NULL,
+  `user_id` INT(11) NOT NULL,
+  `role` VARCHAR(50) DEFAULT NULL,  -- Ví dụ: 'chính', 'phụ', 'duyệt'
+  `assigned_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `task_id` (`task_id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `task_supervisors_ibfk_1` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `task_supervisors_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+===== Bổ sung ngày 11.6
+CREATE TABLE `departments` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(100) NOT NULL,
+  `description` TEXT DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+ALTER TABLE `users`
+  ADD CONSTRAINT `fk_user_department`
+  FOREIGN KEY (`department`) REFERENCES `departments`(`id`)
+  ON DELETE SET NULL ON UPDATE CASCADE;
+
+  ALTER TABLE `users`
+  MODIFY COLUMN `department` INT(11);
+
+ALTER TABLE users ADD COLUMN department_id INT;
+
+ALTER TABLE users
+ADD CONSTRAINT fk_department
+FOREIGN KEY (department_id) REFERENCES departments(id)
+ON DELETE SET NULL;
+
+
+==== Bổ sung bảng giao việc liên phòng ===
+CREATE TABLE department_tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã công việc',
+    title VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Tên công việc',
+    description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Mô tả công việc',
+
+    start_time DATETIME NOT NULL COMMENT 'Thời gian bắt đầu',
+    end_time DATETIME COMMENT 'Thời gian hoàn thành',
+
+    created_by INT NOT NULL COMMENT 'Người khởi tạo',
+    status ENUM('pending', 'in_progress', 'completed') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'pending' COMMENT 'Trạng thái công việc',
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời điểm tạo',
+
+    FOREIGN KEY (created_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Giao việc giữa các phòng ban';
+
+
+CREATE TABLE department_task_assignees (
+    task_id INT,
+    user_id INT,
+    PRIMARY KEY (task_id, user_id),
+    FOREIGN KEY (task_id) REFERENCES department_tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB COMMENT='Danh sách người chịu trách nhiệm chính cho task liên phòng';
+
+
+CREATE TABLE department_task_followers (
+    task_id INT,
+    user_id INT,
+    PRIMARY KEY (task_id, user_id),
+    FOREIGN KEY (task_id) REFERENCES department_tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB COMMENT='Danh sách người liên quan đến task liên phòng';
+
+
+CREATE TABLE department_task_categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE department_tasks ADD code VARCHAR(100);
+
+// Kết nối CSDL
+$db = (new DB())->connect();
+
+// Lấy danh sách project groups để dùng cho menu sidebar (nếu cần)
+$projectGroupModel = new ProjectGroup($db);
+$projectGroups = $projectGroupModel->getAll();
+
+// Lấy danh sách danh mục công việc liên phòng (cho sidebar)
+require_once 'models/DepartmentTaskCategory.php';
+$categoryModel = new DepartmentTaskCategory($db);
+$departmentTaskCategories = $categoryModel->getAll();
+
+
+
+============ 12/6 ==============
+ALTER TABLE department_tasks
+ADD COLUMN code VARCHAR(50) NOT NULL,
+ADD COLUMN title VARCHAR(255) NOT NULL,
+ADD COLUMN description TEXT,
+ADD COLUMN from_department_id INT NOT NULL,
+ADD COLUMN to_department_id INT NOT NULL,
+ADD COLUMN assigned_by INT NOT NULL,
+ADD COLUMN start_time DATETIME NOT NULL,
+ADD COLUMN end_time DATETIME NOT NULL,
+ADD COLUMN status ENUM('pending', 'in_progress', 'completed') DEFAULT 'pending',
+ADD COLUMN assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP;
+
+-- Thêm khóa ngoại nếu chưa có
+ALTER TABLE department_tasks
+ADD CONSTRAINT fk_from_dept FOREIGN KEY (from_department_id) REFERENCES departments(id),
+ADD CONSTRAINT fk_to_dept FOREIGN KEY (to_department_id) REFERENCES departments(id),
+ADD CONSTRAINT fk_assigned_by FOREIGN KEY (assigned_by) REFERENCES users(id);
+
+
+
+CREATE TABLE department_tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    from_department_id INT NOT NULL,
+    to_department_id INT NOT NULL,
+    assigned_by INT NOT NULL,
+    start_time DATETIME NOT NULL,
+    end_time DATETIME NOT NULL,
+    status ENUM('pending', 'in_progress', 'completed') DEFAULT 'pending',
+    assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (from_department_id) REFERENCES departments(id),
+    FOREIGN KEY (to_department_id) REFERENCES departments(id),
+    FOREIGN KEY (assigned_by) REFERENCES users(id)
+);
+
+
+ALTER TABLE department_tasks
+    ADD COLUMN category_id INT NOT NULL,
+    ADD FOREIGN KEY (category_id) REFERENCES department_task_categories(id);
+
+
+
+8/7/2025
+DESCRIBE department_tasks;
+ALTER TABLE department_tasks
+ADD COLUMN created_by INT;
+
+ALTER TABLE department_tasks 
+DROP FOREIGN KEY department_tasks_ibfk_1,
+DROP FOREIGN KEY department_tasks_ibfk_2;
+
+
+ALTER TABLE department_tasks 
+MODIFY from_department_id INT NULL,
+MODIFY to_department_id INT NULL;
+
+
+
+CREATE TABLE `department_subtasks` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `task_id` INT NOT NULL,
+    `title` VARCHAR(255) NOT NULL,
+    `assignee_id` INT NOT NULL,
+    FOREIGN KEY (`task_id`) REFERENCES department_tasks(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`assignee_id`) REFERENCES users(`id`) ON DELETE SET NULL
+);
+
+
+
+
+9/7
+CREATE TABLE department_task_responsibles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    department_task_id INT NOT NULL,
+    user_id INT NOT NULL,
+    FOREIGN KEY (department_task_id) REFERENCES department_tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE department_task_related_users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    department_task_id INT NOT NULL,
+    user_id INT NOT NULL,
+    FOREIGN KEY (department_task_id) REFERENCES department_tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE department_subtask_reports (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subtask_id INT NOT NULL,
+    user_id INT NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (subtask_id) REFERENCES department_subtasks(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+
+ALTER TABLE department_subtask_reports ADD COLUMN status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending';
+
+
+ALTER TABLE department_subtask_reports ADD COLUMN status VARCHAR(20) DEFAULT 'pending';
+
+
+CREATE TABLE department_subtask_comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subtask_id INT NOT NULL,
+    user_id INT NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME NOT NULL,
+    FOREIGN KEY (subtask_id) REFERENCES department_subtasks(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+
+CREATE TABLE `department_task_comments` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `subtask_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `content` TEXT NOT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (`subtask_id`) REFERENCES `department_subtasks`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE department_task_related_departments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    task_id INT NOT NULL,
+    department_id INT NOT NULL,
+    FOREIGN KEY (task_id) REFERENCES department_tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE
+);
+
+
+ALTER TABLE department_subtasks ADD COLUMN status VARCHAR(20) DEFAULT 'in_progress';
+
+
+ALTER TABLE tasks ADD COLUMN department_task_id INT NULL;

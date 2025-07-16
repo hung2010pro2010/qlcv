@@ -1,0 +1,32 @@
+/web3
+|-- /assets
+|   |-- /css
+|   |-- /js
+|   |-- /images
+|   |-- /plugins
+|   |-- /scss
+|-- /controllers
+|   |-- UserController.php
+|   |-- TaskController.php
+|-- /models
+|   |-- User.php
+|   |-- Task.php
+|-- /uploads
+|-- /views
+|   |-- /users
+|       |-- login.php
+|       |-- list.php
+|       |-- add.php
+|   |-- /tasks
+|       |-- list.php
+|       |-- add.php
+|   |-- /layouts
+|       |-- content.php
+|       |-- header.php
+|       |-- sidebar.php
+|       |-- footer.php
+|       |-- layout.php
+|       |-- menu_header.php
+|-- /config
+|   |-- db.php
+|-- index.php

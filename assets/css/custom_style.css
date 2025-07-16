@@ -1,0 +1,73 @@
+ button.btn.dropdown-toggle.btn-default {
+    display: none;
+}
+.form-control{
+    background-color:#f7f7f7 ;
+    padding-left:5px !important;
+    padding:0px !important;
+}
+
+/* ====== Căn chỉnh menu ngang ====== */
+.menu-chinh {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top:1%;
+    
+    background: transparent;
+    width: 80%;
+    float: left;
+}
+
+.menu_chinhto {
+    list-style: none;
+    display: flex;
+    gap: 24px;
+    padding: 0;
+    margin: 0;
+    flex-wrap: wrap; /* Cho responsive */
+}
+
+.menu_chinhto li {
+    margin: 0;
+}
+
+.menu_chinhto li a {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    color: #ffffff; /* Màu trắng mặc định */
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.menu_chinhto li a i.material-icons {
+    font-size: 18px;
+    color: inherit;
+    transition: color 0.3s;
+}
+
+/* Hover */
+.menu_chinhto li a:hover {
+    color: #00bcd4; /* Màu xanh khi hover */
+}
+
+/* Active */
+.menu_chinhto li.active a {
+    color: #ffc107; /* Màu vàng khi active */
+}
+@media (max-width: 768px) {
+    .menu_chinhto {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .menu_chinhto li a {
+        width: 100%;
+        justify-content: center;
+    }
+}
